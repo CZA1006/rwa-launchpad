@@ -1,0 +1,13 @@
+# Foundry / Solidity
+out/
+cache/
+broadcast/
+dist/
+node_modules/
+.env
+.DS_Store
+
+# 忽略 contracts 下的生成文件
+contracts/out/
+contracts/cache/
+contracts/broadcast/
