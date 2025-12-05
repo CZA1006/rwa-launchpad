@@ -13,7 +13,7 @@ contract BuyDutch is Script {
     address constant KYC_HOOK = 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0;
     
     // 【关键】刚才生成的荷式拍卖地址
-    address constant AUCTION_ADDRESS = 0x61c36a8d610163660E21a8b7359e1Cac0C9133e1;
+    address constant AUCTION_ADDRESS = 0x94099942864EA81cCF197E9D71ac53310b1468D8;
 
     // 买家私钥 (Anvil Account 1)
     uint256 constant BUYER_PK = 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d;
@@ -54,19 +54,9 @@ contract BuyDutch is Script {
         // 购买数量: 10 个 RWA (18 decimals)
         uint256 buyAmount = 10 * 1e18;
         
-        // 计算预估成本 (18 decimals)
-        // Price (1e18) * Amount (1e18) / 1e18 = 1e18 precision
-        uint256 cost18 = (currentPrice * buyAmount) / 1e18;
-        
-        // 【关键修复】将成本转换为 USDC 精度 (6 decimals)
-        // 1e18 -> 1e6: divide by 1e12
-        uint256 costUSDC = cost18 / 1e12;
-        
-        console2.log("   Cost in USDC (6 decimals):", costUSDC);
-        
-        // Approve max amount to handle any price variation
+        // 【关键修复】给最大授权，防止时间偏差导致授权不足
         usdc.approve(AUCTION_ADDRESS, type(uint256).max);
-        console2.log("4. Buyer approved USDC:", costUSDC);
+        console2.log("4. Buyer approved USDC (Unlimited)");
 
         // 执行购买
         auction.buy(buyAmount);
