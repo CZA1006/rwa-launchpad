@@ -1,0 +1,7 @@
+{
+  "network": "arbitrumSepolia",
+  "easyAuction": "0x2ba9a3f460Af255f13F699627AE7f5f3424fB511",
+  "auctionToken": "0xa78586513070C45bFeB3E65639C187536918FEc1",
+  "biddingToken": "0xc326603ef1c9B7472Cd7EB28CA0A3c79b0a25c5C",
+  "auctionId": "1"
+}
