@@ -298,6 +298,7 @@ cast logs --from-block 0 \
 
 - [@CZA1006](https://github.com/CZA1006) - Nick Z. Cai
 - [@ssssydney](https://github.com/ssssydney)
+- [@Jack-Li-Npu](https://github.com/Jack-Li-Npu) - Jack Li
 
 ---
 
