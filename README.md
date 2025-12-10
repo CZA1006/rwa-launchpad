@@ -4,154 +4,303 @@
 
 本项目旨在构建一个去中心化的 RWA (Real World Asset) 发行平台，允许企业（如 SpaceX、OpenAI 等独角兽）将股权代币化并通过链上拍卖进行分发。
 
-项目核心采用 **“连续多轮荷式拍卖” (Continuous Multi-Round Dutch Auction)** 机制，结合 **KYC 权限钩子**，实现了兼具公平性、抗抢跑和合规性的资产发行方案。
+项目采用 **CEX 风格的混合架构**：链上资金托管 + 链下高速撮合 + 批量链上结算，结合 **KYC 权限钩子**，实现了兼具效率、安全和合规性的资产交易方案。
 
 ---
 
-## 🚀 项目状态 (Project Status)
+## ✨ 核心特性
 
-当前处于 **Phase 2 (功能闭环)** 完成阶段。
-
-- [x] **核心架构**: 完成单体仓库 (Monorepo) 搭建与依赖管理 (Vendorized Dependencies)。
-- [x] **基础设施**: 部署了 MockUSDC (支付)、MockRWA (资产) 及 KYCValidationHook (合规)。
-- [x] **竞价机制 (Dutch Auction)**: 
-  - 实现每 30 分钟一轮的连续竞拍。
-  - 价格随时间线性衰减 (Linear Decay)。
-  - 支持原子化即时成交 (Instant Settlement)。
-- [x] **自动化测试**: 编写了完整的 Foundry 脚本，模拟“部署 -> 开启拍卖 -> 时间旅行 -> 模拟购买”的全流程。
-- [x] **测试网实战**: 成功在 Sepolia 测试网上运行了 5 分钟快闪拍卖，并验证了价格衰减逻辑。
+| 特性 | 描述 |
+|------|------|
+| 🏦 **链上资金托管** | Deposit/Withdraw 通过智能合约执行，资金安全有保障 |
+| ⚡ **链下高速撮合** | 订单撮合在后端内存中完成，毫秒级响应 |
+| 📦 **批量链上结算** | 成交记录批量打包上链，降低 Gas 成本 |
+| 🔗 **钱包集成** | RainbowKit + MetaMask，一键连接 |
+| 📊 **实时数据** | WebSocket 推送订单簿、成交、价格变动 |
+| 🎨 **专业交易界面** | 类 CEX 的现代化交易 UI |
 
 ---
 
-## 🧪 本地开发与测试指南 (Local Dev)
+## 🚀 项目状态
 
-### 1. 环境准备
-确保已安装 [Foundry](https://getfoundry.sh/) 和 Git。
-```bash
-git clone https://github.com/CZA1006/rwa-launchpad.git
-cd rwa-launchpad/contracts
-forge build
-```
+当前处于 **Phase 3 (前端集成)** 完成阶段。
 
-### 2. 启动本地链
-打开一个**新的终端窗口**，启动 Anvil 本地节点：
-```bash
-anvil
-```
-
-### 3. 执行端到端测试 (End-to-End Testing)
-
-#### 🟢 第一步：部署基础设施
-```bash
-forge script script/DeployPhase1.s.sol --fork-url http://127.0.0.1:8545 --broadcast
-```
-*(复制生成的 MockUSDC, MockRWA, KYC_HOOK 地址)*
-
-#### 🟢 第二步：开启荷式拍卖
-更新 `script/CreateDutchAuction.s.sol` 中的地址，然后运行：
-```bash
-forge script script/CreateDutchAuction.s.sol --fork-url http://127.0.0.1:8545 --broadcast
-```
-*(复制生成的 Auction 地址)*
-
-#### 🟢 第三步：模拟用户购买
-更新 `script/BuyDutch.s.sol` 中的地址，然后运行：
-```bash
-forge script script/BuyDutch.s.sol --fork-url http://127.0.0.1:8545 --broadcast
-```
+- [x] **智能合约**: OrderBookSettlement 结算合约、GO/RWA 代币
+- [x] **后端服务**: 订单簿、撮合引擎、链上结算服务
+- [x] **前端界面**: Next.js 14 + TypeScript + Tailwind CSS
+- [x] **钱包集成**: RainbowKit + Wagmi + Anvil 本地链支持
+- [x] **资金管理**: 链上 Deposit/Withdraw（需 MetaMask 确认）
+- [x] **交易功能**: 链下买卖、余额验证、实时更新
 
 ---
 
-## 🌐 Sepolia 测试网实战指南 (Live Testnet)
+## 🏗️ 系统架构
 
-除了本地测试，您还可以将合约部署到真实的以太坊 Sepolia 测试网。
-
-### 1. 配置环境变量
-在终端中临时设置您的私钥和 RPC URL (推荐使用 Alchemy/Infura)：
-
-```bash
-# 您的 Sepolia RPC 节点 (例如 Alchemy HTTPS URL)
-export SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
-
-# 您的部署钱包私钥 (MetaMask 导出，需以 0x 开头)
-export PRIVATE_KEY=0xYOUR_PRIVATE_KEY...
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         CEX 风格混合架构                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   ┌──────────────┐                                                  │
+│   │  用户钱包     │                                                  │
+│   │  (MetaMask)  │                                                  │
+│   └──────┬───────┘                                                  │
+│          │                                                          │
+│   ┌──────▼───────┐     ┌──────────────┐     ┌──────────────┐       │
+│   │   前端       │────▶│   后端       │────▶│  区块链      │       │
+│   │  (Next.js)   │◀────│  (Node.js)   │◀────│  (Anvil)     │       │
+│   └──────────────┘     └──────────────┘     └──────────────┘       │
+│                                                                     │
+│   链上操作 (需 MetaMask):          链下操作 (即时):                  │
+│   ├── Deposit GO/RWA              ├── 下单 (Buy/Sell)               │
+│   ├── Withdraw GO/RWA             ├── 撤单                          │
+│   └── 查看链上余额                 └── 撮合成交                      │
+│                                                                     │
+│   批量结算:                                                         │
+│   └── 后端定期将成交记录打包上链 (settleTrades)                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2. 部署到 Sepolia
-执行部署脚本，并指定 RPC URL：
+### 交易流程
 
-```bash
-# 1. 部署 Mock 代币和 Hook
-forge script script/DeployPhase1.s.sol --rpc-url  --broadcast
-
-# 2. (手动更新 CreateDutchAuction.s.sol 中的地址后) 开启拍卖
-forge script script/CreateDutchAuction.s.sol --rpc-url  --broadcast
 ```
+1️⃣ 用户 Deposit → MetaMask 确认 → 代币转入合约 → Trading Balance 增加
 
-### 3. 实时监控交易簿 (Order Book Monitor)
-荷式拍卖是即时成交的，没有挂单簿。我们可以使用监控脚本实时查看**“当前价格”**和**“已售数量”**。
+2️⃣ 用户下单 → 后端订单簿 → 撮合引擎匹配 → 成交
 
-更新 `script/MonitorAuction.s.sol` 中的 ，然后运行：
+3️⃣ 成交记录 → 批量队列 → 达到阈值或定时触发 → settleTrades() 上链
 
-```bash
-forge script script/MonitorAuction.s.sol --rpc-url 
-```
-
-您将看到类似如下的实时状态输出：
-```text
-========== AUCTION STATUS MONITOR ==========
- Time (Timestamp) : 1764905460
- --------------------------------------------
- Current Price    : 2.44000 USDC  <-- 价格随时间自动下降
- Total Sold       : 0 RWA
- Total Raised     : 0 USDC
- ============================================
+4️⃣ 用户 Withdraw → MetaMask 确认 → 代币转回钱包
 ```
 
 ---
 
-## 📂 项目结构 (Structure)
+## 📂 项目结构
 
-```text
+```
 rwa-launchpad/
-├── contracts/                  # 智能合约核心 (Foundry)
+├── contracts/                      # 智能合约 (Foundry)
 │   ├── src/
-│   │   ├── DutchAuction.sol    # [核心] 荷式拍卖逻辑 (定价、轮次、购买、退款)
-│   │   ├── DutchAuctionFactory.sol # [核心] 拍卖工厂
-│   │   ├── KYCValidationHook.sol   # [合规] 白名单权限控制
-│   │   ├── mock/               # 模拟资产 (ERC20)
-│   │   └── ...                 
-│   ├── script/                 # 自动化部署与交互脚本
-│   │   ├── DeployPhase1.s.sol        # 基础部署
-│   │   ├── CreateDutchAuction.s.sol  # 开启拍卖
-│   │   ├── BuyDutch.s.sol            # 购买测试
-│   │   └── MonitorAuction.s.sol      # 状态监控 (交易簿)
-│   └── foundry.toml            # 编译器配置
-├── frontend/                   # 前端应用 (Next.js + Wagmi - 待开发)
+│   │   ├── OrderBookSettlement.sol # CEX风格订单簿结算合约
+│   │   ├── DutchAuction.sol        # 荷式拍卖逻辑
+│   │   ├── DutchAuctionFactory.sol # 拍卖工厂
+│   │   ├── KYCValidationHook.sol   # 白名单权限控制
+│   │   └── mock/
+│   │       └── MockTokens.sol      # GO Token + RWA Token
+│   ├── script/
+│   │   ├── DeployAll.s.sol         # 一键部署所有合约
+│   │   └── ...
+│   └── foundry.toml
+│
+├── backend/                        # 链下订单簿服务
+│   ├── src/
+│   │   ├── index.js                # Express + Socket.io 服务器
+│   │   ├── orderbook.js            # 订单簿数据结构
+│   │   ├── matching.js             # 价格优先时间优先撮合引擎
+│   │   └── settlement.js           # 链上结算服务 (批量上链)
+│   ├── .env                        # 环境配置
+│   └── package.json
+│
+├── frontend/                       # Next.js 前端
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx            # 主交易页面
+│   │   │   ├── providers.tsx       # Wagmi + RainbowKit + Anvil
+│   │   │   └── globals.css
+│   │   ├── components/
+│   │   │   ├── Header.tsx          # 导航栏 + 钱包连接
+│   │   │   ├── WalletPanel.tsx     # 💰 资金管理 (Deposit/Withdraw)
+│   │   │   ├── TradingChart.tsx    # 📈 价格曲线图
+│   │   │   ├── OrderBook.tsx       # 📊 订单簿深度
+│   │   │   ├── TradeForm.tsx       # 📝 下单表单
+│   │   │   ├── RecentTrades.tsx    # 📜 最近成交
+│   │   │   └── MarketInfo.tsx      # ℹ️ 市场信息
+│   │   ├── store/
+│   │   │   ├── marketStore.ts      # 市场数据状态
+│   │   │   └── balanceStore.ts     # 余额状态 (共享)
+│   │   ├── hooks/
+│   │   │   └── useSettlement.ts    # 合约交互 Hooks
+│   │   └── lib/
+│   │       └── contracts.ts        # 合约地址 + ABI
+│   ├── .env.local                  # 环境配置
+│   └── package.json
+│
 └── README.md
 ```
 
-## �� 核心机制说明
+---
 
-### 连续多轮荷式拍卖 (Dutch Auction)
-* **轮次设计**：拍卖总时长被划分为多个固定时长的轮次（如每轮 30 分钟）。
-* **定价逻辑**：每轮开始时价格重置为 StartPrice，随时间线性下跌至 FloorPrice。
-* **结算方式**：**Pay-as-Bid**。用户接受当前价格并调用 buy()，智能合约立即扣除 USDC 并发送 RWA 代币。
+## 🧪 快速开始
 
-### 合规层 (Compliance)
-* 集成 **Hooks** 机制。在用户调用 buy() 时，合约会回调 KYCValidationHook。
-* 只有在 Hook 中被标记为 isKyced 的地址才能完成交易，否则直接 Revert。
+### 环境要求
+
+- [Node.js](https://nodejs.org/) >= 18
+- [Foundry](https://getfoundry.sh/) (forge, anvil, cast)
+- [Git](https://git-scm.com/)
+- [MetaMask](https://metamask.io/) 浏览器插件
+
+### 1. 克隆仓库
+
+```bash
+git clone https://github.com/CZA1006/rwa-launchpad.git
+cd rwa-launchpad
+```
+
+### 2. 启动本地区块链
+
+```bash
+# 终端 1: 启动 Anvil
+anvil
+```
+
+### 3. 部署智能合约
+
+```bash
+# 终端 2: 部署合约
+cd contracts
+
+# 设置私钥 (Anvil 默认测试账户)
+export PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+# 一键部署
+forge script script/DeployAll.s.sol --fork-url http://127.0.0.1:8545 --broadcast
+```
+
+记下输出的合约地址:
+```
+GO Token deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+RWA Token deployed to: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+OrderBookSettlement deployed to: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+Market created, ID: 0x1903c7a6...
+```
+
+### 4. 配置后端
+
+```bash
+cd ../backend
+npm install
+
+# 创建 .env 文件
+cat > .env << EOF
+PORT=3003
+FRONTEND_URL=http://localhost:3000
+RPC_URL=http://127.0.0.1:8545
+RELAYER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+SETTLEMENT_CONTRACT=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+EOF
+
+# 启动后端
+npm run dev
+```
+
+### 5. 配置前端
+
+```bash
+cd ../frontend
+npm install
+
+# 创建 .env.local 文件 (使用部署输出的地址)
+cat > .env.local << EOF
+NEXT_PUBLIC_SETTLEMENT_CONTRACT=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+NEXT_PUBLIC_GO_TOKEN=0x5FbDB2315678afecb367f032d93F642f64180aa3
+NEXT_PUBLIC_RWA_TOKEN=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+NEXT_PUBLIC_MARKET_ID=0x1903c7a614583ef174d872a02908c88d72ee57aad51c7eba95a1ba09bb5c33b6
+EOF
+
+# 启动前端
+npm run dev
+```
+
+### 6. 配置 MetaMask
+
+1. 添加 Anvil 网络:
+   - 网络名称: `Anvil Local`
+   - RPC URL: `http://127.0.0.1:8545`
+   - Chain ID: `31337`
+   - 货币符号: `ETH`
+
+2. 导入测试账户:
+   - 私钥: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
+   - 该账户有 10000 ETH 和初始铸造的 GO/RWA 代币
+
+### 7. 开始交易
+
+1. 访问 http://localhost:3000
+2. 点击 "Connect Wallet" 连接 MetaMask
+3. 在 Wallet 面板中 Deposit GO 或 RWA 代币
+4. 在 Trade 面板中下单买卖
 
 ---
 
-## 🗺️ 开发路线图 (Roadmap)
+## 📡 API 文档
+
+### REST API
+
+| Endpoint | Method | 描述 |
+|----------|--------|------|
+| `/api/markets` | GET | 获取所有市场 |
+| `/api/orderbook/:marketId` | GET | 获取订单簿 |
+| `/api/prices/:marketId` | GET | 获取价格历史 |
+| `/api/trades/:marketId` | GET | 获取最近成交 |
+| `/api/orders` | POST | 下单 |
+| `/api/orders/:orderId` | DELETE | 撤单 |
+| `/api/orders/user/:address` | GET | 获取用户订单 |
+| `/api/settlement/status` | GET | 结算服务状态 |
+| `/api/settlement/trades` | GET | 已结算交易列表 |
+| `/api/settlement/flush` | POST | 手动触发批量结算 |
+
+### WebSocket Events
+
+| Event | 方向 | 描述 |
+|-------|------|------|
+| `subscribe` | Client→Server | 订阅市场数据 |
+| `orderbook` | Server→Client | 订单簿更新 |
+| `trade` | Server→Client | 新成交 |
+| `market` | Server→Client | 市场数据更新 |
+
+---
+
+## 🔧 链上查询
+
+```bash
+# 查看成交总数
+cast call 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "getTradesCount()(uint256)" --rpc-url http://127.0.0.1:8545
+
+# 查看用户余额 (available, locked)
+cast call 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 \
+  "getBalance(address,address)(uint256,uint256)" \
+  <USER_ADDRESS> <TOKEN_ADDRESS> \
+  --rpc-url http://127.0.0.1:8545
+
+# 查看交易事件
+cast logs --from-block 0 \
+  --address 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 \
+  "TradeExecuted(bytes32,bytes32,bytes32,uint256,uint256)" \
+  --rpc-url http://127.0.0.1:8545
+```
+
+---
+
+## 🗺️ 开发路线图
 
 | 阶段 | 状态 | 核心目标 |
-| :--- | :--- | :--- |
-| **Phase 1** | ✅ 完成 | 基础设施搭建、依赖管理、Mock 资产上链。 |
-| **Phase 2** | ✅ 完成 | **智能合约闭环**。实现荷式拍卖核心逻辑、编写 E2E 测试脚本、Sepolia 实战验证。 |
-| **Phase 3** | 🔄 待开始 | **前端集成**。搭建 Next.js 界面，连接钱包，可视化展示价格曲线与倒计时。 |
-| **Phase 4** | ⏳ 规划中 | **公测发布**。完善 UI/UX，准备演示 Demo。 |
+|------|------|----------|
+| **Phase 1** | ✅ 完成 | 基础设施搭建、依赖管理、Mock 资产上链 |
+| **Phase 2** | ✅ 完成 | 智能合约闭环、荷式拍卖核心逻辑、E2E 测试 |
+| **Phase 3** | ✅ 完成 | 前端集成、CEX订单簿、钱包连接、资金管理 |
+| **Phase 4** | 🔄 进行中 | 公测发布、UI/UX 优化、安全审计 |
+
+---
+
+## 🤝 贡献者
+
+- [@CZA1006](https://github.com/CZA1006) - Nick Z. Cai
+- [@ssssydney](https://github.com/ssssydney)
+
+---
 
 ## 📄 License
+
 MIT
